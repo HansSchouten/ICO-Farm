@@ -14,7 +14,7 @@ fixed_parameters = [
     # strategy start date
     '2017-05-01',
     # strategy end date
-    '2018-01-01',
+    '2018-01-18',
     # average ICO duration
     21,
     # start spread factor
@@ -47,13 +47,13 @@ def main():
     # perform Particle Swarm Optimization
     parameters = [
         # target factor
-        2.5,
+        3,
         # cashing timeout [days]
         50,
-        # after cashing spread
+        # after cashing spread increase
         2,
         # minimum percentage to upgrade to next generation [%]
-        80
+        95
     ]
     profit = evaluate(parameters)
     print(profit)
@@ -206,13 +206,18 @@ def evaluate(strategy):
 # return wether the goal of this investment has been reached
 def needsHarvest(investment, current_day, strategy):
     investment_value = getInvestmentValue(investment, current_day)
+    target_factor = strategy[0]
+    max_duration = strategy[1]
 
     # harvest profits after duration
-    if investment['duration'] >= strategy[1]:
+    if investment['duration'] >= max_duration:
         return True
 
-    # harvest profits after target factor has been reached
-    if (investment_value / investment['amount']) >= strategy[0]:
+    # compute current target factor using linear decrease from {target_factor} to 1 in {max_duration} days
+    current_target_factor = target_factor - (((target_factor - 1) * investment['duration']) / max_duration)
+
+    # harvest profits after current target factor has been reached
+    if (investment_value / investment['amount']) >= current_target_factor:
         return True
 
     return False
@@ -224,7 +229,7 @@ def harvestInvestment(investments, cash, investment, current_day):
     newCash = getInvestmentValue(investment, current_day)
     cash += newCash
     del investments[symbol]
-    print("Cashing investment " + symbol + " from $" + str(round(investment['amount'])) + " for $" + str(round(newCash)))
+    print("Cashing investment " + symbol + " from $" + str(round(investment['amount'])) + " for $" + str(round(newCash))  + " after " + str(investment['duration']) + " days")
     return cash, investments
 
 

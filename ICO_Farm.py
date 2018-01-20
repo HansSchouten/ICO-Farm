@@ -48,52 +48,51 @@ def main():
     data['icos'] = icos
 
     # manual test a strategy
-    #parameters = [
-    #    # target factor
-    #    3,
-    #    # cashing timeout [days]
-    #    50,
-    #    # after cashing spread increase
-    #    2,
-    #    # minimum percentage to upgrade to next generation [%]
-    #    95
-    #]
-    #profit = evaluate(parameters)
-    #print(profit)
+    parameters = [
+        # target factor
+        2.38,
+        # cashing timeout [days]
+        6,
+        # after cashing spread increase
+        0,
+        # minimum percentage to upgrade to next generation [%]
+        92
+    ]
+    profit = evaluate(parameters)
+    print(profit)
     
     # perform Particle Swarm Optimization
-
     logging_enabled = False
-    particleSwarmOptimization()
+    #particleSwarmOptimization()
 
 
-# perform particle swarm optimization
+# perform Particle Swarm Optimization
 def particleSwarmOptimization():
     # set lower bounds
     lower_bounds = [
         1.5,
-        3,
         0,
-        50
+        0,
+        60
     ]
 
     # set upper bounds
     upper_bounds = [
         15,
-        100,
-        5,
-        150
+        60,
+        3,
+        120
     ]
 
-    # perform particle swarm optimization
+    # perform Particle Swarm Optimization
     print("Particle Swarm Optimization started")
-    opt_parameters, opt_profit = pso(inv_evaluate, lower_bounds, upper_bounds,
+    opt_parameters, inv_opt_profit = pso(inv_evaluate, lower_bounds, upper_bounds,
         ieqcons=[], f_ieqcons=None, args=(), kwargs={},
         swarmsize=500, omega=0.5, phip=0.5, phig=0.5, maxiter=5, minstep=1e-8,
         minfunc=1e-8, debug=True)
 
     # print results
-    print(opt_profit)
+    print(1.0 / inv_opt_profit)
     print(opt_parameters)
 
 

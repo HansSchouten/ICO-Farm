@@ -8,6 +8,7 @@ from datetime import datetime
 from pyswarm import pso
 
 data = {}
+logging_enabled = True
 fixed_parameters = [
     # start amount [usd]
     2000,
@@ -22,6 +23,9 @@ fixed_parameters = [
 ]
 
 def main():
+    global data
+    global logging_enabled
+
     icos = {}
     factors = {}
     
@@ -40,23 +44,57 @@ def main():
     #averageFactorPerDuration(factors)
 
     # set data
-    global data
     data['factors'] = factors
     data['icos'] = icos
 
+    # manual test a strategy
+    #parameters = [
+    #    # target factor
+    #    3,
+    #    # cashing timeout [days]
+    #    50,
+    #    # after cashing spread increase
+    #    2,
+    #    # minimum percentage to upgrade to next generation [%]
+    #    95
+    #]
+    #profit = evaluate(parameters)
+    #print(profit)
+    
     # perform Particle Swarm Optimization
-    parameters = [
-        # target factor
+
+    logging_enabled = False
+    particleSwarmOptimization()
+
+
+# perform particle swarm optimization
+def particleSwarmOptimization():
+    # set lower bounds
+    lower_bounds = [
+        1.5,
         3,
-        # cashing timeout [days]
-        50,
-        # after cashing spread increase
-        2,
-        # minimum percentage to upgrade to next generation [%]
-        95
+        0,
+        50
     ]
-    profit = evaluate(parameters)
-    print(profit)
+
+    # set upper bounds
+    upper_bounds = [
+        15,
+        100,
+        5,
+        150
+    ]
+
+    # perform particle swarm optimization
+    print("Particle Swarm Optimization started")
+    opt_parameters, opt_profit = pso(evaluate, lower_bounds, upper_bounds,
+        ieqcons=[], f_ieqcons=None, args=(), kwargs={},
+        swarmsize=500, omega=0.5, phip=0.5, phig=0.5, maxiter=5, minstep=1e-8,
+        minfunc=1e-8, debug=True)
+
+    # print results
+    print(opt_profit)
+    print(opt_parameters)
 
 
 def processICO(ico, all_factors):
@@ -153,6 +191,10 @@ def averageFactorPerDuration(all_factors):
 def evaluate(strategy):
     global data
     global fixed_parameters
+
+    # round strategy parameters if needed
+    strategy[1] = round(strategy[1])
+    strategy[2] = round(strategy[2])
     
     cash = fixed_parameters[0]
     current_day = dateToEpoch(fixed_parameters[1])
@@ -175,7 +217,7 @@ def evaluate(strategy):
         balance = cash + currentPortfolioValue(current_day, investments)
         if balance > generation_soft_target:
             generation += 1
-            print("New generation: " + str(generation))
+            log("\nNew generation: " + str(generation))
             generation_investment_amount = generation_target / (fixed_parameters[4] + ((generation - 1) * strategy[2]))
             generation_target = fixed_parameters[0] * math.pow(strategy[0], generation)
             generation_soft_target = generation_target * (strategy[3] / 100.0)
@@ -229,7 +271,7 @@ def harvestInvestment(investments, cash, investment, current_day):
     newCash = getInvestmentValue(investment, current_day)
     cash += newCash
     del investments[symbol]
-    print("Cashing investment " + symbol + " from $" + str(round(investment['amount'])) + " for $" + str(round(newCash))  + " after " + str(investment['duration']) + " days")
+    log("Cashing investment " + symbol + " from $" + str(round(investment['amount'])) + " for $" + str(round(newCash))  + " after " + str(investment['duration']) + " days")
     return cash, investments
 
 
@@ -245,7 +287,7 @@ def makeInvestment(investments, generation_investment_amount, active_icos):
             'duration': 0,
             'on_exchange_time': ico['on_exchange_time']
         }
-        print("Adding investment " + symbol + " for $" + str(round(generation_investment_amount)))
+        log("Adding investment " + symbol + " for $" + str(round(generation_investment_amount)))
         break
     
     return investments
@@ -295,6 +337,12 @@ def activeICOs(current_date):
             })
 
     return icos
+
+# log message to console, if logging is enabled
+def log(message):
+    global logging_enabled
+    if logging_enabled:
+        print(message)
 
 
 if __name__ == "__main__":

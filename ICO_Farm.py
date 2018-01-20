@@ -87,7 +87,7 @@ def particleSwarmOptimization():
 
     # perform particle swarm optimization
     print("Particle Swarm Optimization started")
-    opt_parameters, opt_profit = pso(evaluate, lower_bounds, upper_bounds,
+    opt_parameters, opt_profit = pso(inv_evaluate, lower_bounds, upper_bounds,
         ieqcons=[], f_ieqcons=None, args=(), kwargs={},
         swarmsize=500, omega=0.5, phip=0.5, phig=0.5, maxiter=5, minstep=1e-8,
         minfunc=1e-8, debug=True)
@@ -185,6 +185,11 @@ def averageFactorPerDuration(all_factors):
             averages[duration] = str(sums[duration] / counts[duration]) + ' - ' + str(counts[duration])
 
     pprint(averages)
+
+
+# return the inverse of the strategy profit (since PSO minimizes the called function)
+def inv_evaluate(strategy):
+    return 1.0 / evaluate(strategy)
 
 
 # evaluate a strategy

@@ -11,11 +11,6 @@ class StrategySimulator:
         self.logging_enabled = logging_enabled
 
 
-    # disabling log messages in console
-    def disableLogging(self):
-        self.logging_enabled = False
-
-
     # return the inverse of the strategy profit (since PSO minimizes the called function)
     def inv_evaluate(self, strategy):
         return 1.0 / self.evaluate(strategy)

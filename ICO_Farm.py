@@ -25,10 +25,9 @@ fixed_parameters = [
 ]
 
 
+# main method
 def main():
     global data
-    global logging_enabled
-    global fixed_parameters
 
     icos = {}
     factors = {}
@@ -44,14 +43,22 @@ def main():
             if ico != False:
                 icos[symbol] = ico
 
-    # manual test methods
-    #averageFactorPerDuration(factors)
-
     # set data
     data['factors'] = factors
     data['icos'] = icos
+    
+    # uncomment desired method
+    #averageFactorPerDuration(factors)
+    #manualStrategy()
+    particleSwarmOptimization()
 
-    # manual test a strategy
+
+# manually test a strategy
+def manualStrategy():
+    global data
+    global fixed_parameters
+    global logging_enabled
+
     strategy = [
         # target factor
         2.38,
@@ -65,12 +72,19 @@ def main():
     simulator = StrategySimulator(data, fixed_parameters, logging_enabled)
     profit = simulator.evaluate(strategy)
     print(profit)
+
     
-    # perform Particle Swarm Optimization
-    optimizer = ParticleSwarmOptimizer(simulator, True)
+# perform Particle Swarm Optimization
+def particleSwarmOptimization():
+    global data
+    global fixed_parameters
+
+    simulator = StrategySimulator(data, fixed_parameters, False)
+    optimizer = ParticleSwarmOptimizer(simulator)
     optimizer.optimize()
 
 
+# process the given ICO and store for each duration the achieved factor
 def processICO(ico, all_factors):
     if ico['ico_token_price'] == '':
         return False, all_factors

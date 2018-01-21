@@ -55,8 +55,8 @@ def main():
 
     # uncomment desired method
     #averageFactorPerDuration(factors)
-    manualStrategy()
-    #manualStrategyMultipleRuns(200)
+    #manualStrategy()
+    manualStrategyMultipleRuns(100)
     #particleSwarmOptimization()
 
     print("\n--- %s seconds ---" % (time.time() - start_time))
@@ -170,13 +170,17 @@ def processICO(ico, all_factors):
 
                 # replace factor if needed
                 if duration in factors:
-                    if factor > factors[duration]:
-                        factors[duration] = factor
+                    factors[duration].append(factor)
                 else:
-                    factors[duration] = factor
+                    factors[duration] = [factor]
+
+        # compute average factor per day, since it is impossible to pinpoint the exact price peak each day
+        average_factors_per_day = {}
+        for duration, factors in factors.items():
+            average_factors_per_day[duration] = numpy.average(factors)
             
-            # add factors to all factors
-            all_factors[symbol] = factors
+        # add factors to all factors
+        all_factors[symbol] = average_factors_per_day
 
         ico['ico_end_to_exchange_duration'] = getDuration(ico['end'], on_exchange_time)
         ico['on_exchange_time'] = on_exchange_time

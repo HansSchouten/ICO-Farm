@@ -71,7 +71,10 @@ class ParticleSwarmOptimizer:
         profits = []
         for i in range(0, self.runs_per_strategy):
             simulator = StrategySimulator(self.data, self.fixed_parameters, False)
-            profits.append(simulator.evaluate(strategy))            
+            profit = simulator.evaluate(strategy)
+            profits.append(profit)
+            if profit == 0:
+                break
 
         # use lowest profit to optimize for the worst case scenario
         lowest_profit = numpy.min(profits)

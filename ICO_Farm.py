@@ -5,9 +5,9 @@ import math
 from pathlib import Path
 from pprint import pprint
 from datetime import datetime
-from pyswarm import pso
 
-from modules.strategysimulator import StrategySimulator
+from modules.strategy_simulator import StrategySimulator
+from modules.particle_swarm_optimizer import ParticleSwarmOptimizer
 
 data = {}
 logging_enabled = True
@@ -67,38 +67,8 @@ def main():
     print(profit)
     
     # perform Particle Swarm Optimization
-    logging_enabled = False
-    #particleSwarmOptimization()
-
-
-# perform Particle Swarm Optimization
-def particleSwarmOptimization():
-    # set lower bounds
-    lower_bounds = [
-        1.5,
-        0,
-        0,
-        60
-    ]
-
-    # set upper bounds
-    upper_bounds = [
-        15,
-        60,
-        3,
-        120
-    ]
-
-    # perform Particle Swarm Optimization
-    print("Particle Swarm Optimization started")
-    opt_parameters, inv_opt_profit = pso(inv_evaluate, lower_bounds, upper_bounds,
-        ieqcons=[], f_ieqcons=None, args=(), kwargs={},
-        swarmsize=500, omega=0.5, phip=0.5, phig=0.5, maxiter=5, minstep=1e-8,
-        minfunc=1e-8, debug=True)
-
-    # print results
-    print(1.0 / inv_opt_profit)
-    print(opt_parameters)
+    optimizer = ParticleSwarmOptimizer(simulator, True)
+    optimizer.optimize()
 
 
 def processICO(ico, all_factors):

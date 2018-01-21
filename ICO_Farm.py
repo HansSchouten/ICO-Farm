@@ -55,9 +55,9 @@ def main():
 
     # uncomment desired method
     #averageFactorPerDuration(factors)
-    #manualStrategy()
+    manualStrategy()
     #manualStrategyMultipleRuns(200)
-    particleSwarmOptimization()
+    #particleSwarmOptimization()
 
     print("\n--- %s seconds ---" % (time.time() - start_time))
 

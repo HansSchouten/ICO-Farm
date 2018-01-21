@@ -59,7 +59,7 @@ class ParticleSwarmOptimizer:
         simulator = StrategySimulator(self.data, self.fixed_parameters, False)
 
         # return inverse (since PSO minimizes the called function)
-        return 1.0 / simulator.evaluate(strategy)
+        return 1.0 / max(simulator.evaluate(strategy), 1)
 
 
     # return the inverse of the minimum profit when the strategy is multiple times executed

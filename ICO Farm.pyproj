@@ -29,6 +29,9 @@
     <Compile Include="modules\strategy_simulator.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="modules\strategy_simulator_2017.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="modules\" />

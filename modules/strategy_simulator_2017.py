@@ -1,18 +1,14 @@
 import math
-import time
-import random
-import sys
 from datetime import datetime
 
 '''
 This class can simulate possible investment strategies.
 '''
-class StrategySimulator:
+class StrategySimulator2017:
     def __init__(self, data, fixed_parameters, logging_enabled):
         self.data = data
         self.fixed_parameters = fixed_parameters
         self.logging_enabled = logging_enabled
-        self.past_icos = {}
 
 
     # evaluate a strategy
@@ -32,8 +28,6 @@ class StrategySimulator:
         generation_investment_amount = cash / self.fixed_parameters[4]
 
         while current_day < end_day:
-            self.log("\n" + time.strftime('%Y-%m-%d', time.localtime(current_day/1000)))
-
             # harvest ICO investments
             for symbol in list(investments):
                 investment = investments[symbol]
@@ -44,25 +38,24 @@ class StrategySimulator:
             balance = cash + self.currentPortfolioValue(current_day, investments)
             if balance > generation_soft_target:
                 generation += 1
-                self.log("\nGENERATION " + str(generation))
+                self.log("\nNew generation: " + str(generation))
                 generation_investment_amount = generation_target / (self.fixed_parameters[4] + ((generation - 1) * strategy[2]))
                 generation_target = self.fixed_parameters[0] * math.pow(strategy[0], generation)
                 generation_soft_target = generation_target * (strategy[3] / 100.0)
                 
             # make new investments
-            while cash >= generation_investment_amount:
-                investments = self.makeInvestment(investments, generation_investment_amount)
-                cash -= generation_investment_amount
+            active_icos = self.activeICOs(current_day)
+            if cash >= generation_investment_amount:
+                old_len = len(investments)
+                investments = self.makeInvestment(investments, generation_investment_amount, active_icos)
+                # if an active ICO was found, decrease our cash
+                if len(investments) > old_len:
+                    cash = cash - generation_investment_amount
 
             # increase durations of investments
             for symbol, investment in investments.items():
-                if investment['days_until_on_exchange'] == 0:
+                if current_day > investment['on_exchange_time']:
                     investment['duration'] += 1
-                else:
-                    investment['days_until_on_exchange'] -= 1
-                    
-            self.log("Cash: $" + str(round(cash)))
-            self.log("Portfolio: $" + str(round(self.currentPortfolioValue(current_day, investments))))
 
             # go to bed and wait for next day
             current_day = self.addDays(current_day, 1)
@@ -75,7 +68,7 @@ class StrategySimulator:
 
     # return wether the goal of this investment has been reached
     def needsHarvest(self, investment, current_day, strategy):
-        investment_value = self.getInvestmentValue(investment)
+        investment_value = self.getInvestmentValue(investment, current_day)
         target_factor = strategy[0]
         max_duration = strategy[1]
 
@@ -96,32 +89,27 @@ class StrategySimulator:
     # close an investment
     def harvestInvestment(self, investments, cash, investment, current_day):
         symbol = investment['symbol']
-        newCash = self.getInvestmentValue(investment)
+        newCash = self.getInvestmentValue(investment, current_day)
         cash += newCash
         del investments[symbol]
-        self.log("Cashing investment " + symbol + " from $" + str(round(investment['amount'])) + " for $" + str(round(newCash))  + " after " + str(investment['duration']) + " days on exchange")
+        self.log("Cashing investment " + symbol + " from $" + str(round(investment['amount'])) + " for $" + str(round(newCash))  + " after " + str(investment['duration']) + " days")
         return cash, investments
 
 
     # make an investment
-    def makeInvestment(self, investments, generation_investment_amount):
-        not_used_icos = [x for x in self.data['icos'] if x not in self.past_icos]
-        if len(not_used_icos) == 0:
-            return investments
-
-        symbol = random.choice(not_used_icos)
-        self.past_icos[symbol] = 1
-
-        ico = self.data['icos'][symbol]
-        # ico end date to exchange duration + some random days from investment until the end of the ICO
-        days_until_on_exchange = ico['ico_end_to_exchange_duration'] + random.randint(2, 7)
-        investments[symbol] = {
-            'symbol': symbol,
-            'amount': generation_investment_amount,
-            'duration': 0,
-            'days_until_on_exchange': days_until_on_exchange
-        }
-        self.log("Adding investment " + symbol + " for $" + str(round(generation_investment_amount)) + " on exchange over " + str(ico['ico_end_to_exchange_duration']) + " (+" + str(days_until_on_exchange - ico['ico_end_to_exchange_duration']) + ") days")
+    def makeInvestment(self, investments, generation_investment_amount, active_icos):
+        for ico in active_icos:
+            symbol = ico['symbol']
+            if symbol in investments:
+                continue
+            investments[symbol] = {
+                'symbol': symbol,
+                'amount': generation_investment_amount,
+                'duration': 0,
+                'on_exchange_time': ico['on_exchange_time']
+            }
+            self.log("Adding investment " + symbol + " for $" + str(round(generation_investment_amount)))
+            break
     
         return investments
 
@@ -131,18 +119,18 @@ class StrategySimulator:
         value = 0
 
         for symbol, investment in investments.items():
-            value += self.getInvestmentValue(investment)
+            value += self.getInvestmentValue(investment, current_day)
 
         return value
 
 
     # return the value of the given investment on the given day
-    def getInvestmentValue(self, investment):
+    def getInvestmentValue(self, investment, current_day):
         symbol = investment['symbol']
         ico = self.data['icos'][symbol]
 
         # factor equals 1 if the coin is not on the exchange yet
-        if investment['days_until_on_exchange'] > 0:
+        if ico['on_exchange_time'] > current_day:
             return investment['amount']
         else:
             duration = investment['duration']
@@ -152,6 +140,20 @@ class StrategySimulator:
             factor = self.data['factors'][symbol][duration]
             return investment['amount'] * factor
 
+
+    # return the active ICOs
+    def activeICOs(self, current_date):
+        icos = []
+        max_ico_end_date = self.addDays(current_date, self.fixed_parameters[3])
+        for symbol, ico in self.data['icos'].items():
+            # if ICO is started and ICO is not ended
+            if ico['end'] < max_ico_end_date and ico['end'] > current_date:
+                icos.append({
+                    'symbol': symbol,
+                    'on_exchange_time': ico['on_exchange_time']
+                })
+
+        return icos
 
     # log message to console, if logging is enabled
     def log(self, message):

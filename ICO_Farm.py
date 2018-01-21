@@ -2,15 +2,17 @@ import sys
 import json
 import csv
 import math
+import time
+import numpy
 from pathlib import Path
 from pprint import pprint
 from datetime import datetime
 
+from modules.strategy_simulator_2017 import StrategySimulator2017
 from modules.strategy_simulator import StrategySimulator
 from modules.particle_swarm_optimizer import ParticleSwarmOptimizer
 
 data = {}
-logging_enabled = True
 fixed_parameters = [
     # start amount [usd]
     2000,
@@ -19,7 +21,7 @@ fixed_parameters = [
     # strategy end date
     '2018-01-18',
     # average ICO duration
-    21,
+    31,
     # start spread factor
     5
 ]
@@ -47,31 +49,40 @@ def main():
     data['factors'] = factors
     data['icos'] = icos
     
+    start_time = time.time()
+
     # uncomment desired method
     #averageFactorPerDuration(factors)
-    #manualStrategy()
-    particleSwarmOptimization()
+    manualStrategy()
+    #particleSwarmOptimization()
+
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 
 # manually test a strategy
 def manualStrategy():
     global data
     global fixed_parameters
-    global logging_enabled
 
-    strategy = [
-        # target factor
-        2.38,
-        # cashing timeout [days]
-        6,
-        # after cashing spread increase
-        0,
-        # minimum percentage to upgrade to next generation [%]
-        92
-    ]
-    simulator = StrategySimulator(data, fixed_parameters, logging_enabled)
-    profit = simulator.evaluate(strategy)
-    print(profit)
+    results = []
+    for i in range(0,1000):
+        strategy = [
+            # target factor
+            2.5,
+            # cashing timeout [days]
+            7,
+            # after cashing spread increase
+            0,
+            # minimum percentage to upgrade to next generation [%]
+            92
+        ]
+        simulator = StrategySimulator(data, fixed_parameters, False)
+        profit = simulator.evaluate(strategy)
+        results.append(profit)
+
+        print(str(i))
+        print("min: $" + str(round(numpy.min(results))) + " median: $" + str(round(numpy.median(results))) + " average: $" + str(round(numpy.average(results))) + " max: $" + str(round(numpy.max(results))))
+    print(sorted(results))
 
     
 # perform Particle Swarm Optimization
@@ -79,8 +90,7 @@ def particleSwarmOptimization():
     global data
     global fixed_parameters
 
-    simulator = StrategySimulator(data, fixed_parameters, False)
-    optimizer = ParticleSwarmOptimizer(simulator)
+    optimizer = ParticleSwarmOptimizer(data, fixed_parameters)
     optimizer.optimize()
 
 
@@ -135,6 +145,7 @@ def processICO(ico, all_factors):
             # add factors to all factors
             all_factors[symbol] = factors
 
+        ico['ico_end_to_exchange_duration'] = getDuration(ico['end'], on_exchange_time)
         ico['on_exchange_time'] = on_exchange_time
         return ico, all_factors
 
@@ -147,6 +158,11 @@ def getDuration(time1, time2):
 # get the epoch version of the given date string
 def dateToEpoch(date, format = '%Y-%m-%d'):
     return (datetime.strptime(date, format) - datetime(1970, 1, 1)).total_seconds() * 1000
+    
+
+# add a given number of days
+def addDays(start, days):
+    return math.floor(start + (days * 86400000))
 
 
 # compute the average profit factor for each duration

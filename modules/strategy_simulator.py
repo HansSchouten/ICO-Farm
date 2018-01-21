@@ -60,15 +60,18 @@ class StrategySimulator:
                     investment['duration'] += 1
                 else:
                     investment['days_until_on_exchange'] -= 1
-                    
+                   
+            # log current status
             self.log("Cash: $" + str(round(cash)))
             self.log("Portfolio: $" + str(round(self.currentPortfolioValue(current_day, investments))))
 
             # go to bed and wait for next day
             current_day = self.addDays(current_day, 1)
-
-        for symbol in list(investments):
-            cash, investments = self.harvestInvestment(investments, cash, investments[symbol], current_day)
+            
+        # revert to yesterday and add values of currently open investments
+        current_day = self.addDays(current_day, -1)
+        for symbol, investment in investments.items():
+            cash += self.getInvestmentValue(investment)
 
         return cash
 

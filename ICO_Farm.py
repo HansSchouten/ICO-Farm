@@ -33,6 +33,8 @@ def main():
 
     icos = {}
     factors = {}
+
+    print("Processing data from past ICOs..")
     
     with open('data/past-icos.csv') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -53,10 +55,11 @@ def main():
 
     # uncomment desired method
     #averageFactorPerDuration(factors)
-    manualStrategy()
-    #particleSwarmOptimization()
+    #manualStrategy()
+    #manualStrategyMultipleRuns(200)
+    particleSwarmOptimization()
 
-    print("--- %s seconds ---" % (time.time() - start_time))
+    print("\n--- %s seconds ---" % (time.time() - start_time))
 
 
 # manually test a strategy
@@ -64,14 +67,39 @@ def manualStrategy():
     global data
     global fixed_parameters
 
+    print("Executing manual strategy")
+
     results = []
-    for i in range(0,1000):
+    strategy = [
+        # target factor
+        2.5,
+        # maximum number of days before an ICO investment is harvested
+        7,
+        # investment spread increase after a generation has been completed
+        0,
+        # minimum percentage to upgrade to next generation [%]
+        92
+    ]
+    simulator = StrategySimulator(data, fixed_parameters, True)
+    profit = simulator.evaluate(strategy)
+    print("\nTOTAL PROFIT: $" + str(round(profit - fixed_parameters[0])))
+
+
+# manually test a strategy using multiple runs
+def manualStrategyMultipleRuns(number_of_runs):
+    global data
+    global fixed_parameters
+
+    print("Executing manual strategy with multiple runs")
+
+    results = []
+    for i in range(0, number_of_runs):
         strategy = [
             # target factor
             2.5,
-            # cashing timeout [days]
+            # maximum number of days before an ICO investment is harvested
             7,
-            # after cashing spread increase
+            # investment spread increase after a generation has been completed
             0,
             # minimum percentage to upgrade to next generation [%]
             92
@@ -80,8 +108,13 @@ def manualStrategy():
         profit = simulator.evaluate(strategy)
         results.append(profit)
 
-        print(str(i))
+        # print status
+        print(str(round(i * 100 / number_of_runs, 2)) + "%")
+        # print current statistics
         print("min: $" + str(round(numpy.min(results))) + " median: $" + str(round(numpy.median(results))) + " average: $" + str(round(numpy.average(results))) + " max: $" + str(round(numpy.max(results))))
+
+    # print sorted profits of all runs of the chosen strategy
+    print("Sorted strategy profits:")
     print(sorted(results))
 
     
@@ -167,6 +200,8 @@ def addDays(start, days):
 
 # compute the average profit factor for each duration
 def averageFactorPerDuration(all_factors):
+    print("Computing average profit factor for each waiting period after an ICO has ended..")
+
     counts = {}
     sums = {}
 
@@ -179,12 +214,16 @@ def averageFactorPerDuration(all_factors):
                 counts[duration] = 1
                 sums[duration] = factor
 
-    averages = {}
+    factors = {}
     for duration in counts:
         if counts[duration] > 5:
-            averages[duration] = str(sums[duration] / counts[duration]) + ' - ' + str(counts[duration])
+            factors[duration] = {
+                'average': round(sums[duration] / counts[duration], 2),
+                'count': counts[duration]
+            }
 
-    pprint(averages)
+    for duration, data in factors.items():
+        print(str(duration) + " days: average factor " + str(data['average']) + " based on " + str(data['count']) + " ICOs")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 
 '''
-This class can simulate possible investment strategies.
+This class can simulate possible investment strategies using actual ICO data of 2017.
 '''
 class StrategySimulator2017:
     def __init__(self, data, fixed_parameters, logging_enabled):

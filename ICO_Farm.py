@@ -168,7 +168,7 @@ def processICO(ico, all_factors):
                 duration = getDuration(on_exchange_time, time)
                 factor = round(price / start_value, 1)
 
-                # replace factor if needed
+                # group factors by day
                 if duration in factors:
                     factors[duration].append(factor)
                 else:

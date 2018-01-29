@@ -15,13 +15,13 @@ from modules.particle_swarm_optimizer import ParticleSwarmOptimizer
 data = {}
 fixed_parameters = [
     # start amount [usd]
-    2000,
+    1000,
     # strategy start date
-    '2017-05-01',
+    '2018-01-29',
     # strategy end date
-    '2018-01-18',
+    '2019-01-01',
     # average ICO duration
-    31,
+    35,
     # start spread factor
     5
 ]
@@ -55,8 +55,8 @@ def main():
 
     # uncomment desired method
     #averageFactorPerDuration(factors)
-    #manualStrategy()
-    manualStrategyMultipleRuns(100)
+    manualStrategy()
+    #manualStrategyMultipleRuns(100)
     #particleSwarmOptimization()
 
     print("\n--- %s seconds ---" % (time.time() - start_time))
@@ -143,7 +143,7 @@ def processICO(ico, all_factors):
     with open(data_file_path) as data_file:
         data = json.load(data_file)
         factors = {}
-        
+
         # find moment on which the coin is published to an exchange
         for tuple in data['market_cap_by_available_supply']:
             time = tuple[0]
@@ -184,6 +184,7 @@ def processICO(ico, all_factors):
 
         ico['ico_end_to_exchange_duration'] = getDuration(ico['end'], on_exchange_time)
         ico['on_exchange_time'] = on_exchange_time
+
         return ico, all_factors
 
 
